@@ -6,7 +6,6 @@ import random
 from ast import literal_eval
 
 from util import Stack, Queue
-from graph import Graph
 # Load world
 world = World()
 
@@ -30,55 +29,49 @@ player = Player(world.starting_room)
 # Fill this out with directions to walk
 # traversal_path = ['n', 'n']
 traversal_path = []
-visited = {}
+# visited = {}
+visited = set()
+
+
+
+def get_the_opposite(direction):
+    result = ''
+
+    if direction == 'n':
+        result = 's'
+    elif direction == 's':
+        result = 'n'
+    elif direction == 'w':
+        result = 'e'
+    else:
+        result = 'w'
+
+    return result
 
 
 def mark_room_as_visited(roomId):
     if roomId not in visited:
-        visited[roomId] = {}
+        visited.add(roomId)
 
-        for direction in player.current_room.get_exits():
-            visited[roomId][direction] = '?'
 
-def checkAllRooms():
+def checkAllRooms(room):
+    paths = []   #need to store path that we take
 
-    stack = Stack()
+    for direction in player.current_room.get_exits():
 
-    while len(visited) <len(room_graph):
-        # path = stack.pop()
-        # currentRoom = path[-1]
-
-        mark_room_as_visited(player.current_room.get_room_id())
-        directionChoice = None
-
-        for direction in visited[player.current_room.get_room_id()].keys():
-            if visited[player.current_room.get_room_id()][direction] == '?':
-                directionChoice = direction
-
-        if directionChoice != None:
-            old_room_id = player.current_room.get_room_id()
-            # pathCopy = path.copy()
-            traversal_path.append(directionChoice)
-
-            player.travel(directionChoice)
-
-            mark_room_as_visited(player.current_room.get_room_id())
-
-            # pathCopy.append(player.current_room)
-
-            visited[old_room_id][directionChoice] = player.current_room.get_room_id()
-            # stack.push(pathCopy)
+        player.travel(direction)    #move to where it`s possible to move
+        if player.current_room.get_room_id() not in visited: #check if we ever visited that room before
+            paths.append(direction)      #save the direction
+            mark_room_as_visited(player.current_room.get_room_id())     #mark the current room as visited
+            paths += checkAllRooms(player.current_room)     # add next directions to current path
+            player.travel(get_the_opposite(direction))      #step one room back
+            paths.append(get_the_opposite(direction))       #save that we step back to our current path
         else:
-            directions = list(visited[player.current_room.get_room_id()].keys())
-            directionChoice = directions[random.randint(0,len(directions ) -1)]
-            traversal_path.append(directionChoice)
-            player.travel(directionChoice)
+            player.travel(get_the_opposite(direction))      #go one step back
 
-    print('trav', traversal_path)
-    print(visited)
-    # end of checkAllRooms method
+    return paths   #return the result
 
-checkAllRooms()
+traversal_path = checkAllRooms(player.current_room)     #for the test
 
 # TRAVERSAL TEST - DO NOT MODIFY
 visited_rooms = set()
